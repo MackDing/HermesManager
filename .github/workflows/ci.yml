@@ -23,6 +23,14 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build frontend (required for embed.FS)
+        working-directory: web
+        run: npm ci && npm run build
+
       - name: Go vet
         run: go vet ./...
 
