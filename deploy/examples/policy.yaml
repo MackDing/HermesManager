@@ -1,0 +1,6 @@
+rules:
+  - id: block-gpt4-free-tier
+    action: deny
+    conditions:
+      model: gpt-4
+      team: free-tier
