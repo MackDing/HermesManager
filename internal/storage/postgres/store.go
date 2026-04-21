@@ -10,7 +10,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -26,7 +28,8 @@ const initMigrationSQL = "" // Loaded at runtime from migrations dir; see Migrat
 
 // Store implements storage.Store backed by PostgreSQL.
 type Store struct {
-	pool *pgxpool.Pool
+	pool   *pgxpool.Pool
+	health Health
 }
 
 // New creates a new Postgres-backed Store from a connection string.
@@ -36,8 +39,10 @@ func New(ctx context.Context, dsn string) (*Store, error) {
 	if err != nil {
 		return nil, fmt.Errorf("postgres: parse config: %w", err)
 	}
-	config.MaxConns = 10
-	config.MinConns = 2
+	config.MaxConns = int32(envInt("PG_MAX_CONNS", 10))
+	config.MinConns = int32(envInt("PG_MIN_CONNS", 2))
+	config.MaxConnLifetime = time.Duration(envInt("PG_MAX_CONN_LIFETIME_MINS", 60)) * time.Minute
+	config.HealthCheckPeriod = time.Duration(envInt("PG_HEALTH_CHECK_SECS", 30)) * time.Second
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
@@ -333,4 +338,16 @@ func (s *Store) NotifySkillsChanged(ctx context.Context) error {
 func (s *Store) NotifyPoliciesChanged(ctx context.Context) error {
 	_, err := s.pool.Exec(ctx, "SELECT pg_notify('policies_changed', '')")
 	return err
+}
+
+func envInt(key string, fallback int) int {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return fallback
+	}
+	return n
 }

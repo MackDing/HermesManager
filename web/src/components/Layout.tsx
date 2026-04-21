@@ -11,14 +11,16 @@ const NAV_ITEMS = [
 export function Layout() {
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar — 240px fixed per MASTER §10 */}
-      <aside className="w-[240px] shrink-0 border-r border-[var(--color-border)] bg-[var(--color-bg-elevated)] flex flex-col">
-        <div className="px-4 py-4 border-b border-[var(--color-border)]">
-          <h1 className="text-[var(--text-base)] font-semibold text-[var(--color-fg)] leading-tight tracking-tight">
+      {/* Sidebar — Dracula dark, gradient accents */}
+      <aside className="w-[240px] shrink-0 bg-[#282A36] flex flex-col border-r border-[#44475A]">
+        {/* Logo with Orbitron + gradient text */}
+        <div className="px-4 py-5 border-b border-[#44475A]">
+          <h1 className="font-display text-lg font-bold text-gradient leading-tight tracking-tight"
+              style={{ fontFamily: 'var(--font-display)' }}>
             HermesManager
           </h1>
-          <span className="text-[var(--text-xs)] text-[var(--color-fg-subtle)] font-[family-name:var(--font-mono)]">
-            v0.1.0
+          <span className="text-[var(--text-xs)] text-[#6272A4] font-[family-name:var(--font-mono)]">
+            v1.0.0
           </span>
         </div>
 
@@ -30,10 +32,10 @@ export function Layout() {
                   to={to}
                   end={to === '/'}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2 rounded-[var(--radius-md)] text-sm font-medium transition-opacity duration-150 ${
+                    `flex items-center gap-3 px-3 py-2 rounded-[var(--radius-md)] text-sm font-medium transition-all duration-150 ${
                       isActive
-                        ? 'bg-[var(--color-bg-subtle)] text-[var(--color-fg)]'
-                        : 'text-[var(--color-fg-muted)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-fg)]'
+                        ? 'text-gradient bg-[rgba(189,147,249,0.1)]'
+                        : 'text-[#6272A4] hover:bg-[rgba(189,147,249,0.06)] hover:text-[#F8F8F2]'
                     }`
                   }
                 >
@@ -45,13 +47,13 @@ export function Layout() {
           </ul>
         </nav>
 
-        <div className="px-3 py-3 border-t border-[var(--color-border)]">
+        <div className="px-3 py-3 border-t border-[#44475A]">
           <ThemeToggle />
         </div>
       </aside>
 
       {/* Main content area */}
-      <main className="flex-1 min-w-0 overflow-auto">
+      <main className="flex-1 min-w-0 overflow-auto bg-[var(--color-bg)]">
         <div className="p-6 max-w-[1536px]">
           <Outlet />
         </div>

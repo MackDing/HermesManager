@@ -1,37 +1,51 @@
-/* HermesManager Design Tokens — from MASTER.md §2, §3, §4 */
+/* HermesManager — Dracula Gradient Theme Tokens */
+/* Source: design-system/dracula-gradient.md */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@700;900&display=swap');
 
 :root {
-  /* Light theme (default) */
-  --color-bg:            #F8FAFC;
+  /* Light mode — desaturated Dracula */
+  --color-bg:            #F8F8F2;
   --color-bg-elevated:   #FFFFFF;
-  --color-bg-subtle:     #F1F5F9;
-  --color-border:        #E2E8F0;
-  --color-border-strong: #CBD5E1;
+  --color-bg-subtle:     #F0F0EC;
+  --color-border:        #D6D6CC;
+  --color-border-strong: #BFBFB6;
 
-  --color-fg:            #0F172A;
-  --color-fg-muted:      #475569;
-  --color-fg-subtle:     #94A3B8;
+  --color-fg:            #282A36;
+  --color-fg-muted:      #6272A4;
+  --color-fg-subtle:     #8B95B5;
 
-  --color-primary:       #0F172A;
-  --color-primary-fg:    #FFFFFF;
-  --color-accent:        #3B82F6;
+  --color-primary:       #282A36;
+  --color-primary-fg:    #F8F8F2;
+  --color-accent:        #BD93F9;
 
-  /* Semantic status */
-  --color-success:       #16A34A;
-  --color-success-bg:    #DCFCE7;
-  --color-warning:       #D97706;
-  --color-warning-bg:    #FEF3C7;
-  --color-error:         #DC2626;
-  --color-error-bg:      #FEE2E2;
-  --color-info:          #0284C7;
-  --color-info-bg:       #E0F2FE;
+  --color-success:       #50FA7B;
+  --color-success-bg:    #E8FFF0;
+  --color-warning:       #FFB86C;
+  --color-warning-bg:    #FFF5E8;
+  --color-error:         #FF5555;
+  --color-error-bg:      #FFE8E8;
+  --color-info:          #8BE9FD;
+  --color-info-bg:       #E8FAFF;
 
-  /* Runtime-specific */
-  --color-runtime-local:  #7C3AED;
-  --color-runtime-docker: #0EA5E9;
-  --color-runtime-k8s:    #2563EB;
+  --color-runtime-local:  #BD93F9;
+  --color-runtime-docker: #8BE9FD;
+  --color-runtime-k8s:    #FF79C6;
+
+  /* Gradients */
+  --gradient-primary:  linear-gradient(135deg, #BD93F9, #FF79C6);
+  --gradient-success:  linear-gradient(135deg, #50FA7B, #8BE9FD);
+  --gradient-accent:   linear-gradient(135deg, #FF79C6, #FFB86C);
+  --gradient-info:     linear-gradient(135deg, #8BE9FD, #BD93F9);
+
+  /* Glow (none in light mode) */
+  --glow-primary:    none;
+  --glow-accent:     none;
+  --glow-success:    none;
+  --glow-info:       none;
 
   /* Typography */
+  --font-display: 'Orbitron', system-ui, sans-serif;
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'Menlo', 'Monaco', monospace;
 
@@ -60,46 +74,60 @@
   --radius-md: 6px;
   --radius-lg: 8px;
 
-  /* Shadows */
-  --shadow-xs: 0 1px 0 rgba(15, 23, 42, 0.04);
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.08);
-  --shadow-md: 0 4px 6px rgba(15, 23, 42, 0.05), 0 10px 15px rgba(15, 23, 42, 0.08);
+  /* Shadows (light mode — subtle) */
+  --shadow-xs: 0 1px 0 rgba(40, 42, 54, 0.04);
+  --shadow-sm: 0 1px 2px rgba(40, 42, 54, 0.06), 0 1px 3px rgba(40, 42, 54, 0.08);
+  --shadow-md: 0 4px 6px rgba(40, 42, 54, 0.05), 0 10px 15px rgba(40, 42, 54, 0.08);
 }
 
 [data-theme="dark"] {
-  --color-bg:            #0F172A;
-  --color-bg-elevated:   #1E293B;
-  --color-bg-subtle:     #0B1220;
-  --color-border:        #334155;
-  --color-border-strong: #475569;
+  /* Dark mode — TRUE Dracula */
+  --color-bg:            #282A36;
+  --color-bg-elevated:   #44475A;
+  --color-bg-subtle:     #21222C;
+  --color-border:        #44475A;
+  --color-border-strong: #6272A4;
 
-  --color-fg:            #F8FAFC;
-  --color-fg-muted:      #94A3B8;
-  --color-fg-subtle:     #64748B;
+  --color-fg:            #F8F8F2;
+  --color-fg-muted:      #6272A4;
+  --color-fg-subtle:     #4B5574;
 
-  --color-primary:       #F8FAFC;
-  --color-primary-fg:    #0F172A;
-  --color-accent:        #60A5FA;
+  --color-primary:       #F8F8F2;
+  --color-primary-fg:    #282A36;
+  --color-accent:        #BD93F9;
 
-  --color-success:       #22C55E;
-  --color-success-bg:    #052E16;
-  --color-warning:       #F59E0B;
-  --color-warning-bg:    #422006;
-  --color-error:         #EF4444;
-  --color-error-bg:      #450A0A;
-  --color-info:          #38BDF8;
-  --color-info-bg:       #082F49;
+  --color-success:       #50FA7B;
+  --color-success-bg:    rgba(80, 250, 123, 0.12);
+  --color-warning:       #FFB86C;
+  --color-warning-bg:    rgba(255, 184, 108, 0.12);
+  --color-error:         #FF5555;
+  --color-error-bg:      rgba(255, 85, 85, 0.12);
+  --color-info:          #8BE9FD;
+  --color-info-bg:       rgba(139, 233, 253, 0.12);
 
-  --color-runtime-local:  #A78BFA;
-  --color-runtime-docker: #38BDF8;
-  --color-runtime-k8s:    #60A5FA;
+  --color-runtime-local:  #BD93F9;
+  --color-runtime-docker: #8BE9FD;
+  --color-runtime-k8s:    #FF79C6;
 
-  --shadow-xs: 0 1px 0 rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4), 0 10px 15px rgba(0, 0, 0, 0.3);
+  /* Gradients (hero treatment) */
+  --gradient-primary:  linear-gradient(135deg, #BD93F9, #FF79C6);
+  --gradient-success:  linear-gradient(135deg, #50FA7B, #8BE9FD);
+  --gradient-accent:   linear-gradient(135deg, #FF79C6, #FFB86C);
+  --gradient-info:     linear-gradient(135deg, #8BE9FD, #BD93F9);
+
+  /* Glow (subtle neon in dark mode) */
+  --glow-primary:    0 0 8px rgba(189, 147, 249, 0.4);
+  --glow-accent:     0 0 8px rgba(255, 121, 198, 0.3);
+  --glow-success:    0 0 8px rgba(80, 250, 123, 0.3);
+  --glow-info:       0 0 8px rgba(139, 233, 253, 0.3);
+
+  /* Shadows (dark mode — deeper) */
+  --shadow-xs: 0 1px 0 rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5), 0 10px 15px rgba(0, 0, 0, 0.4);
 }
 
-/* Reduced motion — MASTER §7 */
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -108,9 +136,76 @@
   }
 }
 
-/* Tabular nums for data — MASTER §3 */
+/* Tabular nums for data */
 .tabular { font-variant-numeric: tabular-nums; }
 code, pre, .mono, td.numeric, td.id, td.timestamp {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+/* --- Dracula Gradient Component Overrides --- */
+
+/* Stat card gradient top accent */
+.stat-card {
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--gradient-primary);
+}
+
+/* Display font for stat values + page titles */
+.font-display { font-family: var(--font-display); }
+
+/* Gradient primary button */
+.btn-gradient {
+  background: var(--gradient-primary);
+  color: #FFFFFF;
+  border: none;
+  box-shadow: var(--glow-primary);
+  transition: opacity 150ms ease-out, box-shadow 150ms ease-out;
+}
+.btn-gradient:hover {
+  opacity: 0.9;
+  box-shadow: 0 0 12px rgba(189, 147, 249, 0.5);
+}
+
+/* Gradient text (for active nav, highlights) */
+.text-gradient {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Dark mode table row hover */
+[data-theme="dark"] tr:hover td {
+  background: rgba(189, 147, 249, 0.06);
+}
+
+/* Dark mode scrollbar */
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--color-bg-subtle);
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 3px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent);
+}
+
+/* Glow focus ring for dark mode */
+[data-theme="dark"] *:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  box-shadow: var(--glow-primary);
 }

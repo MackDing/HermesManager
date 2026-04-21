@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	"github.com/hermesmanager/hermesmanager/internal/api"
 	"github.com/hermesmanager/hermesmanager/internal/policy"
@@ -23,6 +24,15 @@ import (
 )
 
 func main() {
+	// Configure zerolog
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
+	level, err := zerolog.ParseLevel(envOr("LOG_LEVEL", "info"))
+	if err != nil {
+		level = zerolog.InfoLevel
+	}
+	zerolog.SetGlobalLevel(level)
+	log.Logger = zerolog.New(os.Stdout).With().Timestamp().Logger()
+
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -35,31 +45,31 @@ func main() {
 	if dbURL != "" {
 		store, err := postgres.New(ctx, dbURL)
 		if err != nil {
-			log.Fatalf("postgres: %v", err)
+			log.Fatal().Err(err).Msg("postgres connection failed")
 		}
 		defer store.Close()
 
 		if err := store.Migrate(ctx); err != nil {
-			log.Fatalf("migrate: %v", err)
+			log.Fatal().Err(err).Msg("migration failed")
 		}
-		fmt.Println("postgres connected, migrations applied")
+		log.Info().Msg("postgres connected, migrations applied")
 
 		// --- Policy engine ---
 		var pol *policy.Engine
 		if policyFile != "" {
 			pol, err = policy.NewEngine(policyFile)
 			if err != nil {
-				log.Fatalf("policy: %v", err)
+				log.Fatal().Err(err).Msg("policy load failed")
 			}
-			fmt.Printf("policy loaded from %s\n", policyFile)
+			log.Info().Str("file", policyFile).Msg("policy loaded")
 		}
 
 		// --- Runtimes ---
 		runtimes, err := runtime.Build()
 		if err != nil {
-			log.Fatalf("runtimes: %v", err)
+			log.Fatal().Err(err).Msg("runtime build failed")
 		}
-		fmt.Printf("runtimes registered: %d\n", len(runtimes))
+		log.Info().Int("count", len(runtimes)).Msg("runtimes registered")
 
 		// --- Scheduler ---
 		sched := scheduler.NewScheduler(runtimes, store)
@@ -68,7 +78,7 @@ func main() {
 		srv := api.NewServer(store, sched, pol)
 		handler = srv.Handler()
 	} else {
-		fmt.Println("WARNING: DATABASE_URL not set, running with stub handlers (dev mode)")
+		log.Warn().Msg("DATABASE_URL not set, running with stub handlers (dev mode)")
 		handler = api.NewRouter()
 	}
 
@@ -81,22 +91,22 @@ func main() {
 	}
 
 	go func() {
-		fmt.Printf("hermesmanager listening on :%s\n", port)
+		log.Info().Str("port", port).Msg("hermesmanager listening")
 		if err := httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("server error: %v", err)
+			log.Fatal().Err(err).Msg("server error")
 		}
 	}()
 
 	<-ctx.Done()
-	fmt.Println("\nshutting down...")
+	log.Info().Msg("shutting down")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := httpSrv.Shutdown(shutdownCtx); err != nil {
-		log.Fatalf("shutdown error: %v", err)
+		log.Fatal().Err(err).Msg("shutdown error")
 	}
-	fmt.Println("stopped")
+	log.Info().Msg("stopped")
 }
 
 func envOr(key, fallback string) string {

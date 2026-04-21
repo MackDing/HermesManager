@@ -45,7 +45,7 @@ func NewRouter() http.Handler {
 	// SPA fallback for all other GET requests
 	mountSPA(mux)
 
-	return mux
+	return wrapMiddleware(mux)
 }
 
 // Handler returns the HTTP handler with all routes wired to real implementations.
@@ -70,7 +70,12 @@ func (s *Server) Handler() http.Handler {
 	// SPA — serves the embedded React app for all non-API routes
 	mountSPA(mux)
 
-	return mux
+	return wrapMiddleware(mux)
+}
+
+// wrapMiddleware applies RequestID + Logging middleware to any handler.
+func wrapMiddleware(h http.Handler) http.Handler {
+	return RequestIDMiddleware(LoggingMiddleware(h))
 }
 
 // mountSPA adds the embedded React SPA as a catch-all for non-API GET requests.
