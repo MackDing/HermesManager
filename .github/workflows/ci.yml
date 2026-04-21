@@ -30,14 +30,16 @@ jobs:
         run: go test -race ./...
 
       - name: Go coverage
-        run: go test -cover ./internal/gateway/... ./internal/policy/... ./internal/runtime/... ./internal/scheduler/...
+        run: go test -coverprofile=cover.out ./internal/gateway/... ./internal/policy/... ./internal/runtime/local/... ./internal/runtime/docker/... ./internal/runtime/k8s/... ./internal/scheduler/...
         continue-on-error: true
 
       - name: Upload coverage
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-go${{ matrix.go-version }}
           path: cover.out
+          if-no-files-found: ignore
 
   frontend-build:
     name: Frontend Build

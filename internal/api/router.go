@@ -13,6 +13,7 @@ import (
 	"github.com/hermesmanager/hermesmanager/internal/policy"
 	"github.com/hermesmanager/hermesmanager/internal/scheduler"
 	"github.com/hermesmanager/hermesmanager/internal/storage"
+	"github.com/hermesmanager/hermesmanager/web"
 )
 
 // Server holds dependencies for all API handlers.
@@ -27,12 +28,12 @@ func NewServer(store storage.Store, sched *scheduler.Scheduler, pol *policy.Engi
 	return &Server{store: store, scheduler: sched, policy: pol}
 }
 
-// NewRouter returns the HTTP handler with all v0.1 routes wired to real handlers.
+// NewRouter returns the HTTP handler with stub API routes + embedded SPA.
 func NewRouter() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", handleHealthz)
 
-	// Stubs for when no Server is configured (backwards compat with F0 main.go)
+	// Stubs for when no Server is configured
 	mux.HandleFunc("GET /v1/skills", stub("GET /v1/skills"))
 	mux.HandleFunc("GET /v1/skills/{name}", stub("GET /v1/skills/{name}"))
 	mux.HandleFunc("POST /v1/tasks", stub("POST /v1/tasks"))
@@ -40,6 +41,9 @@ func NewRouter() http.Handler {
 	mux.HandleFunc("GET /v1/tasks/{id}", stub("GET /v1/tasks/{id}"))
 	mux.HandleFunc("POST /v1/events", stub("POST /v1/events"))
 	mux.HandleFunc("GET /v1/events", stub("GET /v1/events"))
+
+	// SPA fallback for all other GET requests
+	mountSPA(mux)
 
 	return mux
 }
@@ -63,7 +67,18 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /v1/events", s.handleCreateEvent)
 	mux.HandleFunc("GET /v1/events", s.handleListEvents)
 
+	// SPA — serves the embedded React app for all non-API routes
+	mountSPA(mux)
+
 	return mux
+}
+
+// mountSPA adds the embedded React SPA as a catch-all for non-API GET requests.
+func mountSPA(mux *http.ServeMux) {
+	spaHandler := web.Handler()
+	mux.HandleFunc("GET /{path...}", func(w http.ResponseWriter, r *http.Request) {
+		spaHandler.ServeHTTP(w, r)
+	})
 }
 
 func handleHealthz(w http.ResponseWriter, r *http.Request) {
