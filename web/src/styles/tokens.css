@@ -1,0 +1,116 @@
+/* HermesManager Design Tokens — from MASTER.md §2, §3, §4 */
+
+:root {
+  /* Light theme (default) */
+  --color-bg:            #F8FAFC;
+  --color-bg-elevated:   #FFFFFF;
+  --color-bg-subtle:     #F1F5F9;
+  --color-border:        #E2E8F0;
+  --color-border-strong: #CBD5E1;
+
+  --color-fg:            #0F172A;
+  --color-fg-muted:      #475569;
+  --color-fg-subtle:     #94A3B8;
+
+  --color-primary:       #0F172A;
+  --color-primary-fg:    #FFFFFF;
+  --color-accent:        #3B82F6;
+
+  /* Semantic status */
+  --color-success:       #16A34A;
+  --color-success-bg:    #DCFCE7;
+  --color-warning:       #D97706;
+  --color-warning-bg:    #FEF3C7;
+  --color-error:         #DC2626;
+  --color-error-bg:      #FEE2E2;
+  --color-info:          #0284C7;
+  --color-info-bg:       #E0F2FE;
+
+  /* Runtime-specific */
+  --color-runtime-local:  #7C3AED;
+  --color-runtime-docker: #0EA5E9;
+  --color-runtime-k8s:    #2563EB;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Menlo', 'Monaco', monospace;
+
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.25rem;
+  --text-2xl:  1.5rem;
+
+  --leading-tight:  1.25;
+  --leading-normal: 1.5;
+  --leading-data:   1.35;
+
+  /* Spacing */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-12: 3rem;
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 0 rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 4px 6px rgba(15, 23, 42, 0.05), 0 10px 15px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="dark"] {
+  --color-bg:            #0F172A;
+  --color-bg-elevated:   #1E293B;
+  --color-bg-subtle:     #0B1220;
+  --color-border:        #334155;
+  --color-border-strong: #475569;
+
+  --color-fg:            #F8FAFC;
+  --color-fg-muted:      #94A3B8;
+  --color-fg-subtle:     #64748B;
+
+  --color-primary:       #F8FAFC;
+  --color-primary-fg:    #0F172A;
+  --color-accent:        #60A5FA;
+
+  --color-success:       #22C55E;
+  --color-success-bg:    #052E16;
+  --color-warning:       #F59E0B;
+  --color-warning-bg:    #422006;
+  --color-error:         #EF4444;
+  --color-error-bg:      #450A0A;
+  --color-info:          #38BDF8;
+  --color-info-bg:       #082F49;
+
+  --color-runtime-local:  #A78BFA;
+  --color-runtime-docker: #38BDF8;
+  --color-runtime-k8s:    #60A5FA;
+
+  --shadow-xs: 0 1px 0 rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4), 0 10px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Reduced motion — MASTER §7 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Tabular nums for data — MASTER §3 */
+.tabular { font-variant-numeric: tabular-nums; }
+code, pre, .mono, td.numeric, td.id, td.timestamp {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
