@@ -1,47 +1,405 @@
 package api
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/hermesmanager/hermesmanager/internal/policy"
+	"github.com/hermesmanager/hermesmanager/internal/scheduler"
+	"github.com/hermesmanager/hermesmanager/internal/storage"
 )
 
-// NewRouter returns the HTTP handler with all v0.1 routes.
-// Route stubs return 501 until subagents fill in implementations.
+// Server holds dependencies for all API handlers.
+type Server struct {
+	store     storage.Store
+	scheduler *scheduler.Scheduler
+	policy    *policy.Engine
+}
+
+// NewServer creates an API server with real dependencies.
+func NewServer(store storage.Store, sched *scheduler.Scheduler, pol *policy.Engine) *Server {
+	return &Server{store: store, scheduler: sched, policy: pol}
+}
+
+// NewRouter returns the HTTP handler with all v0.1 routes wired to real handlers.
 func NewRouter() http.Handler {
 	mux := http.NewServeMux()
-
-	// Health check — implemented immediately (needed for Helm readiness probe)
 	mux.HandleFunc("GET /healthz", handleHealthz)
 
-	// Skills (read-only)
+	// Stubs for when no Server is configured (backwards compat with F0 main.go)
 	mux.HandleFunc("GET /v1/skills", stub("GET /v1/skills"))
 	mux.HandleFunc("GET /v1/skills/{name}", stub("GET /v1/skills/{name}"))
-
-	// Tasks
 	mux.HandleFunc("POST /v1/tasks", stub("POST /v1/tasks"))
 	mux.HandleFunc("GET /v1/tasks", stub("GET /v1/tasks"))
 	mux.HandleFunc("GET /v1/tasks/{id}", stub("GET /v1/tasks/{id}"))
-
-	// Events (agent callback endpoint + read endpoint)
 	mux.HandleFunc("POST /v1/events", stub("POST /v1/events"))
 	mux.HandleFunc("GET /v1/events", stub("GET /v1/events"))
 
 	return mux
 }
 
+// Handler returns the HTTP handler with all routes wired to real implementations.
+func (s *Server) Handler() http.Handler {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /healthz", handleHealthz)
+
+	// Skills
+	mux.HandleFunc("GET /v1/skills", s.handleListSkills)
+	mux.HandleFunc("GET /v1/skills/{name}", s.handleGetSkill)
+
+	// Tasks
+	mux.HandleFunc("POST /v1/tasks", s.handleCreateTask)
+	mux.HandleFunc("GET /v1/tasks", s.handleListTasks)
+	mux.HandleFunc("GET /v1/tasks/{id}", s.handleGetTask)
+
+	// Events
+	mux.HandleFunc("POST /v1/events", s.handleCreateEvent)
+	mux.HandleFunc("GET /v1/events", s.handleListEvents)
+
+	return mux
+}
+
 func handleHealthz(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+// --- Skills ---
+
+func (s *Server) handleListSkills(w http.ResponseWriter, r *http.Request) {
+	skills, err := s.store.ListSkills(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to list skills: %v", err)
+		return
+	}
+	if skills == nil {
+		skills = []storage.Skill{}
+	}
+	writeJSON(w, http.StatusOK, skills)
+}
+
+func (s *Server) handleGetSkill(w http.ResponseWriter, r *http.Request) {
+	name := r.PathValue("name")
+	skill, err := s.store.GetSkill(r.Context(), name)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to get skill: %v", err)
+		return
+	}
+	if skill == nil {
+		writeError(w, http.StatusNotFound, "skill %q not found", name)
+		return
+	}
+	writeJSON(w, http.StatusOK, skill)
+}
+
+// --- Tasks ---
+
+type createTaskRequest struct {
+	SkillName    string            `json:"skill_name"`
+	Parameters   map[string]any    `json:"parameters"`
+	Runtime      string            `json:"runtime"`
+	User         string            `json:"user"`
+	Team         string            `json:"team"`
+	DeadlineSecs int               `json:"deadline_seconds"`
+}
+
+func (s *Server) handleCreateTask(w http.ResponseWriter, r *http.Request) {
+	var req createTaskRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body: %v", err)
+		return
+	}
+
+	if req.SkillName == "" {
+		writeError(w, http.StatusBadRequest, "skill_name is required")
+		return
+	}
+
+	// Verify skill exists
+	skill, err := s.store.GetSkill(r.Context(), req.SkillName)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to lookup skill: %v", err)
+		return
+	}
+	if skill == nil {
+		writeError(w, http.StatusBadRequest, "skill %q not found", req.SkillName)
+		return
+	}
+
+	// Policy check
+	if s.policy != nil {
+		pReq := policy.PolicyRequest{
+			User: req.User,
+			Team: req.Team,
+		}
+		if len(skill.RequiredModels) > 0 {
+			pReq.Model = skill.RequiredModels[0]
+		}
+		allowed, ruleID, err := s.policy.Evaluate(r.Context(), pReq)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "policy evaluation failed: %v", err)
+			return
+		}
+		if !allowed {
+			writeError(w, http.StatusForbidden, "blocked by policy rule: %s", ruleID)
+			return
+		}
+	}
+
+	// Build task
+	runtime := req.Runtime
+	if runtime == "" {
+		runtime = "local"
+	}
+	deadline := req.DeadlineSecs
+	if deadline <= 0 {
+		deadline = 300
+	}
+
+	taskID := generateID("task")
+	task := storage.Task{
+		ID:           taskID,
+		SkillName:    req.SkillName,
+		Parameters:   req.Parameters,
+		PolicyContext: storage.PolicyContext{
+			User:         req.User,
+			Team:         req.Team,
+			ModelAllowed: skill.RequiredModels,
+		},
+		Runtime:      runtime,
+		State:        storage.TaskStatePending,
+		CreatedAt:    time.Now(),
+		DeadlineSecs: deadline,
+	}
+
+	if err := s.store.CreateTask(r.Context(), task); err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to create task: %v", err)
+		return
+	}
+
+	// Generate agent token
+	tokenBytes := make([]byte, 32)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to generate token: %v", err)
+		return
+	}
+	tokenStr := hex.EncodeToString(tokenBytes)
+	tokenHash := sha256.Sum256([]byte(tokenStr))
+
+	if err := s.store.StoreAgentToken(r.Context(), taskID, tokenHash[:]); err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to store agent token: %v", err)
+		return
+	}
+
+	// Dispatch via scheduler
+	if s.scheduler != nil {
+		handle, err := s.scheduler.Dispatch(r.Context(), task, *skill)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "failed to dispatch task: %v", err)
+			return
+		}
+		writeJSON(w, http.StatusCreated, map[string]any{
+			"task_id":    taskID,
+			"runtime":    handle.RuntimeName,
+			"external_id": handle.ExternalID,
+			"token":      tokenStr,
+		})
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, map[string]any{
+		"task_id": taskID,
+		"token":   tokenStr,
+	})
+}
+
+func (s *Server) handleListTasks(w http.ResponseWriter, r *http.Request) {
+	filter := storage.TaskFilter{
+		Limit:  50,
+		Offset: 0,
+	}
+	if v := r.URL.Query().Get("state"); v != "" {
+		state := storage.TaskState(v)
+		filter.State = &state
+	}
+	if v := r.URL.Query().Get("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			filter.Limit = n
+		}
+	}
+	if v := r.URL.Query().Get("offset"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
+			filter.Offset = n
+		}
+	}
+
+	tasks, err := s.store.ListTasks(r.Context(), filter)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to list tasks: %v", err)
+		return
+	}
+	if tasks == nil {
+		tasks = []storage.Task{}
+	}
+	writeJSON(w, http.StatusOK, tasks)
+}
+
+func (s *Server) handleGetTask(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	task, err := s.store.GetTask(r.Context(), id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to get task: %v", err)
+		return
+	}
+	if task == nil {
+		writeError(w, http.StatusNotFound, "task %q not found", id)
+		return
+	}
+	writeJSON(w, http.StatusOK, task)
+}
+
+// --- Events ---
+
+type createEventRequest struct {
+	ID      string         `json:"id"`
+	TaskID  string         `json:"task_id"`
+	Type    string         `json:"type"`
+	Payload map[string]any `json:"payload"`
+}
+
+func (s *Server) handleCreateEvent(w http.ResponseWriter, r *http.Request) {
+	// Verify agent token from Authorization header
+	token := r.Header.Get("Authorization")
+	if len(token) < 8 || token[:7] != "Bearer " {
+		writeError(w, http.StatusUnauthorized, "missing or invalid Authorization header")
+		return
+	}
+	bearerToken := token[7:]
+
+	var req createEventRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body: %v", err)
+		return
+	}
+
+	if req.TaskID == "" {
+		writeError(w, http.StatusBadRequest, "task_id is required")
+		return
+	}
+
+	// Verify token
+	tokenHash := sha256.Sum256([]byte(bearerToken))
+	valid, err := s.store.VerifyAgentToken(r.Context(), req.TaskID, tokenHash[:])
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "token verification failed: %v", err)
+		return
+	}
+	if !valid {
+		writeError(w, http.StatusUnauthorized, "invalid or revoked agent token")
+		return
+	}
+
+	// Store event
+	eventID := req.ID
+	if eventID == "" {
+		eventID = generateID("evt")
+	}
+	event := storage.Event{
+		ID:        eventID,
+		TaskID:    req.TaskID,
+		Type:      storage.EventType(req.Type),
+		Payload:   req.Payload,
+		CreatedAt: time.Now(),
+	}
+
+	if err := s.store.AppendEvent(r.Context(), event); err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to store event: %v", err)
+		return
+	}
+
+	// If terminal event, update task state and revoke token
+	switch storage.EventType(req.Type) {
+	case storage.EventTaskCompleted:
+		_ = s.store.UpdateTaskState(r.Context(), req.TaskID, storage.TaskStateCompleted)
+		_ = s.store.RevokeAgentToken(r.Context(), req.TaskID)
+	case storage.EventTaskFailed:
+		_ = s.store.UpdateTaskState(r.Context(), req.TaskID, storage.TaskStateFailed)
+		_ = s.store.RevokeAgentToken(r.Context(), req.TaskID)
+	case storage.EventTaskTimeout:
+		_ = s.store.UpdateTaskState(r.Context(), req.TaskID, storage.TaskStateTimeout)
+		_ = s.store.RevokeAgentToken(r.Context(), req.TaskID)
+	case storage.EventTaskStarted:
+		_ = s.store.UpdateTaskState(r.Context(), req.TaskID, storage.TaskStateRunning)
+	}
+
+	writeJSON(w, http.StatusCreated, map[string]string{"id": eventID})
+}
+
+func (s *Server) handleListEvents(w http.ResponseWriter, r *http.Request) {
+	filter := storage.EventFilter{
+		Limit:  500,
+		Offset: 0,
+	}
+	if v := r.URL.Query().Get("task_id"); v != "" {
+		filter.TaskID = &v
+	}
+	if v := r.URL.Query().Get("type"); v != "" {
+		et := storage.EventType(v)
+		filter.EventType = &et
+	}
+	if v := r.URL.Query().Get("since"); v != "" {
+		if t, err := time.Parse(time.RFC3339, v); err == nil {
+			filter.Since = &t
+		}
+	}
+	if v := r.URL.Query().Get("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			filter.Limit = n
+		}
+	}
+
+	events, err := s.store.ListEvents(r.Context(), filter)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to list events: %v", err)
+		return
+	}
+	if events == nil {
+		events = []storage.Event{}
+	}
+	writeJSON(w, http.StatusOK, events)
+}
+
+// --- Helpers ---
+
+func writeJSON(w http.ResponseWriter, status int, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(v)
+}
+
+func writeError(w http.ResponseWriter, status int, format string, args ...any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(map[string]string{
+		"error": fmt.Sprintf(format, args...),
+	})
+}
+
+func generateID(prefix string) string {
+	b := make([]byte, 12)
+	rand.Read(b)
+	return fmt.Sprintf("%s-%s", prefix, hex.EncodeToString(b))
 }
 
 func stub(route string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotImplemented)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "not implemented",
-			"route": route,
-		})
+		writeError(w, http.StatusNotImplemented, "not implemented: %s", route)
 	}
 }
