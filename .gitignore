@@ -1,0 +1,39 @@
+# Binaries
+hermesmanager
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Go
+vendor/
+*.test
+cover.out
+
+# Node / Frontend
+web/node_modules/
+web/dist/
+web/.vite/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+.env.local
+.env.*.local
+
+# gstack / session data
+.gstack/
+.omx/
+
+# Claude Code
+.claude/worktrees/
