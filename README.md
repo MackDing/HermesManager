@@ -1,12 +1,28 @@
-# HermesManager
+<p align="center">
+  <img src="docs/screenshots/dashboard-dark.png" alt="HermesManager — Dracula Gradient Dashboard" width="100%" />
+</p>
 
-5-minute helm install to a working Hermes Agent fleet.
+<h1 align="center">HermesManager</h1>
+
+<p align="center">
+  <strong>K8s-native control plane for Hermes Agent fleets</strong><br/>
+  5-minute helm install · Multi-driver runtime · Policy + audit built-in
+</p>
+
+<p align="center">
+  <a href="https://github.com/MackDing/HermesManager/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/release-v1.0.0-bd93f9?style=flat-square" alt="v1.0.0"/></a>
+  <a href="https://github.com/MackDing/HermesManager/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/MackDing/HermesManager/ci.yml?branch=master&style=flat-square&color=50fa7b" alt="CI"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-ff79c6?style=flat-square" alt="MIT"/></a>
+  <img src="https://img.shields.io/badge/go-1.24-8be9fd?style=flat-square" alt="Go 1.24"/>
+</p>
+
+---
 
 ```bash
-helm install hermesmanager oci://ghcr.io/hermesmanager/hermesmanager --version 0.1.0
+helm install hermesmanager oci://ghcr.io/mackding/hermesmanager --version 1.0.0
 ```
 
-> **Note:** v0.1 ships with single-admin auth. Intended for dev clusters and internal teams, not public-facing production. OIDC/SSO is planned for v0.2.
+> **Note:** v1.0 ships with single-admin auth. Intended for dev clusters and internal teams, not public-facing production without a reverse proxy. OIDC/SSO is planned for v1.1.
 
 ## What It Does
 
