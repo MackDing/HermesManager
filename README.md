@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://github.com/MackDing/HermesManager/releases/tag/v1.0.1"><img src="https://img.shields.io/badge/release-v1.0.1-bd93f9?style=flat-square" alt="v1.0.1"/></a>
-  <a href="https://github.com/MackDing/HermesManager/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/MackDing/HermesManager/ci.yml?branch=master&style=flat-square&color=50fa7b" alt="CI"/></a>
+  <a href="https://github.com/MackDing/HermesManager/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/MackDing/HermesManager/ci.yml?branch=main&style=flat-square&color=50fa7b" alt="CI"/></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-ff79c6?style=flat-square" alt="MIT"/></a>
   <img src="https://img.shields.io/badge/go-1.24-8be9fd?style=flat-square" alt="Go 1.24"/>
 </p>
