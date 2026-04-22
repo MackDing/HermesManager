@@ -18,7 +18,7 @@ image:
   repository: ghcr.io/mackding/hermes-manager
   # Image tag. Should track the Chart appVersion unless pinning a hotfix.
   # Default: v1.1.0
-  tag: v1.1.0
+  tag: v1.1.1
   # One of: Always, IfNotPresent, Never. Use IfNotPresent for pinned tags.
   pullPolicy: IfNotPresent
 

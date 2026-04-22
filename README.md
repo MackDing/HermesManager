@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/MackDing/hermes-manager/releases/tag/v1.1.0"><img src="https://img.shields.io/badge/release-v1.1.0-bd93f9?style=flat-square" alt="v1.1.0"/></a>
+  <a href="https://github.com/MackDing/hermes-manager/releases/tag/v1.1.1"><img src="https://img.shields.io/badge/release-v1.1.1-bd93f9?style=flat-square" alt="v1.1.1"/></a>
   <a href="https://github.com/MackDing/hermes-manager/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/MackDing/hermes-manager/ci.yml?branch=main&style=flat-square&color=50fa7b" alt="CI"/></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-ff79c6?style=flat-square" alt="MIT"/></a>
   <img src="https://img.shields.io/badge/go-1.24-8be9fd?style=flat-square" alt="Go 1.24"/>
@@ -128,7 +128,7 @@ Key Helm values:
 | Value | Default | Description |
 |-------|---------|-------------|
 | `image.repository` | `ghcr.io/mackding/hermes-manager` | Control plane container image |
-| `image.tag` | `v1.1.0` | Image tag |
+| `image.tag` | `v1.1.1` | Image tag |
 | `postgres.enabled` | `true` | Deploy PostgreSQL via CloudNativePG |
 | `postgres.dsn` | (generated) | Connection string (set to use external Postgres) |
 | `slack.enabled` | `false` | Enable the Slack bot gateway |

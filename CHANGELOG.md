@@ -4,6 +4,31 @@ All notable changes to HermesManager are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] — 2026-04-22
+
+Security hardening from Codex full-project audit. No breaking API changes.
+
+### Security
+- **Bearer token auth** on all `/v1/*` API routes (`HERMESMANAGER_API_TOKEN` env var). Health probes and SPA exempt. Helm auto-injects from admin-password Secret.
+- **Slack signature verification** — HMAC-SHA256 `X-Slack-Signature` + timestamp replay protection (5 min window)
+- **Request body limit** — 1 MB via `http.MaxBytesReader` on all routes
+- **Pagination clamped** — max 100 items per page on tasks and events endpoints
+- **Policy engine fix** — `allow` rules now work (first-match-wins semantics). Unknown actions fail closed.
+- **Terminal event error handling** — `UpdateTaskState` failure returns 500 instead of silent 201
+
+### Fixed
+- **Migrations embedded** — SQL files bundled via `embed.FS` so distroless container no longer crashes on first boot
+- **Skill loading** — server reads skills from mounted ConfigMap directory (`HERMESMANAGER_SKILLS_DIR`) on startup via `UpsertSkill`
+- **Slack pipeline unification** — `/hermes run` now goes through the same policy + scheduler + token pipeline as `POST /v1/tasks` (was bypassing all three)
+- **Dispatch rollback** — if scheduler dispatch fails, task is marked `failed` and agent token is revoked (no zombie pending tasks)
+- **Events pagination** — `GET /v1/events` now parses `offset` query param
+
+### Changed
+- Repo renamed `HermesManager` → `hermes-manager`
+- Go module: `github.com/MackDing/hermes-manager`
+- GHCR container: `ghcr.io/mackding/hermes-manager`
+- Helm chart: `oci://ghcr.io/mackding/charts/hermes-manager`
+
 ## [1.1.0] — 2026-04-22
 
 Usability polish release. No breaking API changes.
@@ -95,6 +120,7 @@ First public release. Production-ready single-admin deployment.
 - Single-admin auth only — OIDC / SSO planned for v1.1
 - No multi-tenant namespace isolation yet
 
+[1.1.1]: https://github.com/MackDing/hermes-manager/releases/tag/v1.1.1
 [1.1.0]: https://github.com/MackDing/hermes-manager/releases/tag/v1.1.0
 [1.0.2]: https://github.com/MackDing/hermes-manager/releases/tag/v1.0.2
 [1.0.1]: https://github.com/MackDing/hermes-manager/releases/tag/v1.0.1
