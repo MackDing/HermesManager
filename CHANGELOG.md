@@ -4,6 +4,20 @@ All notable changes to HermesManager are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] — 2026-04-22
+
+Helm chart distribution path fix. No runtime code changes.
+
+### Fixed
+- **Helm chart OCI path collision** — v1.0.1 pushed both the container image and the Helm chart to `ghcr.io/mackding/hermesmanager`, causing the container manifest to overwrite the chart at the same tag. `helm pull` returned `could not load config with mediatype application/vnd.cncf.helm.config.v1+json`.
+- Helm chart now publishes to `oci://ghcr.io/mackding/charts/hermesmanager` (separate namespace from the container image).
+
+### Migration
+- Container image stays at `ghcr.io/mackding/hermesmanager:1.0.2` (unchanged).
+- Helm install command changes:
+  - **Before**: `helm install hermesmanager oci://ghcr.io/mackding/hermesmanager --version 1.0.1`
+  - **After**:  `helm install hermesmanager oci://ghcr.io/mackding/charts/hermesmanager --version 1.0.2`
+
 ## [1.0.1] — 2026-04-22
 
 Release pipeline fixes. No runtime code changes.
@@ -45,5 +59,6 @@ First public release. Production-ready single-admin deployment.
 - Single-admin auth only — OIDC / SSO planned for v1.1
 - No multi-tenant namespace isolation yet
 
+[1.0.2]: https://github.com/MackDing/HermesManager/releases/tag/v1.0.2
 [1.0.1]: https://github.com/MackDing/HermesManager/releases/tag/v1.0.1
 [1.0.0]: https://github.com/MackDing/HermesManager/releases/tag/v1.0.0
